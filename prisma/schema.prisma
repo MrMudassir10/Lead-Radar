@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Stage {
+  NEW
+  CONTACTED
+  REPLIED
+  MEETING
+  WON
+}
+
+model User {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  passwordHash String
+  credits      Int            @default(100)
+  icp          Json?
+  createdAt    DateTime       @default(now())
+  leads        Lead[]
+  ledger       CreditLedger[]
+}
+
+model Lead {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  osmId       String
+  name        String
+  industry    String
+  city        String?
+  address     String?
+  lat         Float?
+  lon         Float?
+  website     String?
+  phone       String?
+  email       String?
+  signals     String[]
+  foundedYear Int?
+  score       Int       @default(0)
+  enrichedAt  DateTime?
+  saved       Boolean   @default(false)
+  stage       Stage     @default(NEW)
+  createdAt   DateTime  @default(now())
+
+  @@unique([userId, osmId])
+  @@index([userId, score])
+}
+
+model CreditLedger {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  delta     Int
+  reason    String
+  leadId    String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
